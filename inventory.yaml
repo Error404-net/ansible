@@ -1,3 +1,5 @@
 containers:
   hosts:
     asnible01: 192.168.1.133
+    roles:
+      -{ role: gerrlingguy.php-msql }
