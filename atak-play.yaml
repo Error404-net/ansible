@@ -1,3 +1,10 @@
 ---
  -name: Playbook-atak
-  Hosts: atak
+  Hosts: coms
+  
+- name: Add or modify hard nofile limits for wildcard domain
+  community.general.pam_limits:
+    domain: '*'
+    limit_type: hard
+    limit_item: nofile
+    value: 39693561
