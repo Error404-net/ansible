@@ -24,7 +24,7 @@ script
     - vars.yml
 
   pre_tasks:
-    - name: "Install packages"
+    - name: "Install PostgreSQL packages"
       dnf: "name={{ item }} state=present"
       with_items:
         - postgresql
@@ -118,7 +118,7 @@ script
 
 - name: If follow=no, /path/to/link will become a file and be overwritten by contents of foo.conf
   ansible.builtin.copy:
-    src: /atak.zip
+    src: Sources/atak.zip
     dest: /home/  # link to /path/to/file
     follow: no
 
