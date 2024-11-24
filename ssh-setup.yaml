@@ -1,0 +1,53 @@
+---
+- name: Configure SSH key authentication
+  hosts: all
+  gather_facts: yes
+  become: yes
+  vars:
+    authorized_keys:
+      - "ssh-rsa AAAA... admin1@example.com"
+      - "ssh-rsa AAAA... admin2@example.com"
+    
+  tasks:
+    - name: Ensure .ssh directory exists
+      file:
+        path: "/home/{{ ansible_user }}/.ssh"
+        state: directory
+        mode: '0700'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Add authorized keys for SSH access
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ item }}"
+      loop: "{{ authorized_keys }}"
+
+    - name: Configure sudo access for service account
+      copy:
+        dest: "/etc/sudoers.d/service_account"
+        content: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Update SSH configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      loop:
+        - regexp: '^PasswordAuthentication'
+          line: 'PasswordAuthentication no'
+        - regexp: '^PubkeyAuthentication'
+          line: 'PubkeyAuthentication yes'
+        - regexp: '^PermitRootLogin'
+          line: 'PermitRootLogin prohibit-password'
+      notify: restart sshd
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
