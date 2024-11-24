@@ -5,8 +5,8 @@
   become: yes
   vars:
     authorized_keys:
-      - "ssh-rsa AAAA... admin1@example.com"
-      - "ssh-rsa AAAA... admin2@example.com"
+      - "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIHPiVH/NCujpqZV2zKcgJ5iRHwslF9vucSkJYBXhOZNRAAAACnNzaDpMaW5vZGU= Jesse@Mac-mini.local"
+      - "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIANelrf35fjUslJmhgBrYc7DU7iXNIHrGw+0SiMRvaAgAAAABHNzaDo= Jesse@Mac-mini.local"
     
   tasks:
     - name: Ensure .ssh directory exists
