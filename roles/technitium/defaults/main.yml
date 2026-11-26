@@ -1,0 +1,10 @@
+---
+# technitium_mode:
+#   export : pull every record in technitium_zones into dns-export/<zone>.yml (read-only)
+#   plan   : compare inventory/<zone>/dns.yml to live, print adds/changes (read-only)
+#   apply  : push adds/changes. Never deletes. Requires technitium_confirm_apply=true.
+technitium_mode: plan
+technitium_confirm_apply: false
+technitium_validate_certs: true
+technitium_managed_types: [A, AAAA, CNAME]
+technitium_export_dir: "{{ playbook_dir }}/../dns-export"

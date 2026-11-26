@@ -1,0 +1,37 @@
+---
+baseline_packages:
+  - sudo
+  - curl
+  - git
+  - vim
+  - htop
+  - tmux
+  - jq
+  - rsync
+  - ca-certificates
+  - chrony
+  - unattended-upgrades
+  - apt-listchanges
+  - prometheus-node-exporter
+
+# Service account Ansible connects as from the control node.
+ansible_svc_user: ansible
+ansible_svc_ssh_key: ""        # control node's public key (control_node role prints it)
+ansible_svc_key_from: ""       # control node IP(s)/tailnet CIDR
+
+# Agent sudo level: "limited" (read/inspect) or "full".
+# The agent normally makes changes by running playbooks on the control node,
+# so "limited" is enough on hosts. Flip per-host in host_vars if needed.
+agent_sudo: limited
+
+# sshd hardening is OFF until a human/agent has verified key login on the host.
+# Set baseline_ssh_verified: true in host_vars/<host>.yml after verifying.
+baseline_harden_sshd: true
+baseline_ssh_verified: false
+
+baseline_unattended_upgrades: true
+baseline_node_exporter: true
+
+# MOTD
+baseline_motd: true
+motd_dir: /etc/update-motd.d

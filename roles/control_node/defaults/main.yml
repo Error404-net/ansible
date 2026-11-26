@@ -1,0 +1,16 @@
+---
+ctrl_repo_url: https://github.com/Error404-net/ansible.git   # use SSH deploy key once private
+ctrl_repo_dir: /opt/infra
+ctrl_group: infra
+ctrl_members: ["{{ operator_user }}", "{{ agent_user }}"]
+ctrl_venv: /opt/infra-venv
+ctrl_pip_packages:
+  - ansible-core
+  - ansible-lint
+  - yamllint
+  - pre-commit
+ctrl_sops_version: "3.9.4"
+ctrl_age_key: /etc/infra/age/keys.txt
+ctrl_ssh_key: /etc/infra/ssh/id_ed25519   # key Ansible uses to reach hosts as ansible_svc_user
+ctrl_install_tailscale: true
+ctrl_tailscale_tags: "tag:ctrl"

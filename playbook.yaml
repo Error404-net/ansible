@@ -1,7 +1,0 @@
-
--name: Playbook01
-  hosts: containers
-  tasks:
-    -name: Ping my hosts
-    ansible.builtin.ping:
-    

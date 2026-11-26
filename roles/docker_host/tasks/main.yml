@@ -1,0 +1,36 @@
+---
+# Docker Engine + compose plugin from Docker's apt repo. Stacks live in
+# /opt/stacks/<name>/compose.yml and are templated by per-service roles later.
+- name: Docker apt key
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Docker apt repo
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+
+- name: Install Docker
+  ansible.builtin.apt:
+    name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+    state: present
+    update_cache: true
+
+- name: Docker running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Stacks dir
+  ansible.builtin.file:
+    path: /opt/stacks
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"

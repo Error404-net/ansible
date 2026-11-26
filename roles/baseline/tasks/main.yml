@@ -1,0 +1,38 @@
+---
+- name: Refuse to run on appliances
+  ansible.builtin.assert:
+    that: "'appliances' not in group_names"
+    fail_msg: "{{ inventory_hostname }} is in 'appliances'. Baseline is not applied to appliances."
+
+- name: Require operator keys before touching accounts
+  ansible.builtin.assert:
+    that:
+      - operator_user is defined and not operator_user.startswith('CHANGEME')
+      - operator_ssh_keys | length > 0
+    fail_msg: "Set operator_user and operator_ssh_keys in inventory/group_vars/all/vars.yml first."
+
+- name: Packages
+  ansible.builtin.import_tasks: packages.yml
+  tags: [packages]
+
+- name: Time
+  ansible.builtin.import_tasks: time.yml
+  tags: [time]
+
+- name: Accounts (operator, ansible service, agent)
+  ansible.builtin.import_tasks: users.yml
+  tags: [users]
+
+- name: SSH hardening
+  ansible.builtin.import_tasks: sshd.yml
+  tags: [sshd]
+
+- name: MOTD
+  ansible.builtin.import_tasks: motd.yml
+  when: baseline_motd | bool
+  tags: [motd]
+
+- name: Dotfiles
+  ansible.builtin.import_tasks: dotfiles.yml
+  when: dotfiles_repo | length > 0
+  tags: [dotfiles]

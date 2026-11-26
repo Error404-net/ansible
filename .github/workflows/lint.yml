@@ -1,0 +1,35 @@
+name: lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ansible-core ansible-lint yamllint
+      - run: ansible-galaxy collection install -r requirements.yml -p collections/
+      - run: yamllint .
+      - run: ansible-lint
+      - name: sops files must be encrypted
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sops.yml' '*.sops.yaml'); do
+            grep -q '^sops:' "$f" || { echo "NOT ENCRYPTED: $f"; fail=1; }
+          done
+          exit $fail

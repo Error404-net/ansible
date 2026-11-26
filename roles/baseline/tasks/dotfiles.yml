@@ -1,0 +1,15 @@
+---
+# Operator dotfiles via chezmoi. Fonts are NOT installed on servers;
+# the terminal on the client renders glyphs.
+- name: Install chezmoi
+  ansible.builtin.shell:
+    cmd: set -o pipefail && curl -fsLS https://get.chezmoi.io | sh -s -- -b /usr/local/bin
+    executable: /bin/bash
+    creates: /usr/local/bin/chezmoi
+
+- name: Apply dotfiles for operator
+  ansible.builtin.command:
+    cmd: /usr/local/bin/chezmoi init --apply {{ dotfiles_repo }}
+    creates: "/home/{{ operator_user }}/.local/share/chezmoi"
+  become: true
+  become_user: "{{ operator_user }}"

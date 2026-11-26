@@ -1,0 +1,6 @@
+---
+- name: Docker hosts
+  hosts: "docker_hosts:!appliances"
+  become: true
+  roles:
+    - docker_host

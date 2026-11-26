@@ -1,0 +1,8 @@
+---
+# Reachability check. Read-only.
+- name: Ping
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:

@@ -1,0 +1,11 @@
+---
+# Exported from Technitium by ansible ({{ item.key }}). Managed types only.
+dns_records:
+{% for r in item.value | selectattr('type', 'in', technitium_managed_types) | sort(attribute='name') %}
+  - name: {{ r.name }}
+    type: {{ r.type }}
+    value: {{ r.rData.ipAddress | default(r.rData.cname | default('')) }}
+    ttl: {{ r.ttl }}
+{% else %}
+  []
+{% endfor %}

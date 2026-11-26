@@ -1,0 +1,10 @@
+---
+# Everything, in safe order. Run with --check --diff first. Never schedule this.
+- name: Control node
+  ansible.builtin.import_playbook: control_node.yml
+
+- name: Baseline
+  ansible.builtin.import_playbook: baseline.yml
+
+- name: Docker hosts
+  ansible.builtin.import_playbook: docker_hosts.yml

@@ -1,0 +1,57 @@
+---
+# Brand MOTD script is sourced from Error404-net/Branding-Guide (single source of truth).
+# Fetched once on the control node, then copied to hosts (hosts need no internet/git).
+- name: Fetch Branding-Guide on control node
+  ansible.builtin.git:
+    repo: "{{ branding_repo }}"
+    dest: "{{ playbook_dir }}/../.cache/Branding-Guide"
+    version: "{{ branding_ref }}"
+    depth: 1
+    single_branch: true
+  delegate_to: localhost
+  run_once: true
+  become: false
+
+- name: Ensure update-motd.d exists
+  ansible.builtin.file:
+    path: "{{ motd_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Silence Debian default uname banner
+  ansible.builtin.file:
+    path: "{{ motd_dir }}/10-uname"
+    mode: "0644"
+  failed_when: false
+
+- name: Empty static /etc/motd (dynamic MOTD takes over)
+  ansible.builtin.copy:
+    dest: /etc/motd
+    content: ""
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install brand logo MOTD
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../.cache/Branding-Guide/MOTD/motd/10-motd-error404-all-logos"
+    dest: "{{ motd_dir }}/10-motd-error404"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Select logo
+  ansible.builtin.lineinfile:
+    path: "{{ motd_dir }}/10-motd-error404"
+    regexp: '^ACTIVE_LOGO='
+    line: 'ACTIVE_LOGO="{{ motd_active_logo }}"'
+
+- name: Host info MOTD (zone / location / purpose)
+  ansible.builtin.template:
+    src: 20-error404-hostinfo.j2
+    dest: "{{ motd_dir }}/20-error404-hostinfo"
+    owner: root
+    group: root
+    mode: "0755"

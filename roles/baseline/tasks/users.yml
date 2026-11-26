@@ -1,0 +1,79 @@
+---
+# ---- operator (Jesse) ------------------------------------------------------
+- name: Operator user exists
+  ansible.builtin.user:
+    name: "{{ operator_user }}"
+    shell: /bin/bash
+    groups: [sudo]
+    append: true
+    create_home: true
+
+- name: Operator authorized keys (exclusive)
+  ansible.posix.authorized_key:
+    user: "{{ operator_user }}"
+    key: "{{ operator_ssh_keys | join('\n') }}"
+    exclusive: true
+
+- name: Operator sudo
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/10-operator
+    content: "{{ operator_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+# ---- ansible service account ----------------------------------------------
+- name: Ansible service user
+  ansible.builtin.user:
+    name: "{{ ansible_svc_user }}"
+    shell: /bin/bash
+    system: true
+    create_home: true
+  when: ansible_svc_ssh_key | length > 0
+
+- name: Ansible service key (control node only)
+  ansible.posix.authorized_key:
+    user: "{{ ansible_svc_user }}"
+    key: "{{ ansible_svc_ssh_key }}"
+    key_options: "{{ ('from=\"' ~ ansible_svc_key_from ~ '\"') if ansible_svc_key_from | length > 0 else omit }}"
+    exclusive: true
+  when: ansible_svc_ssh_key | length > 0
+
+- name: Ansible service sudo
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/20-ansible
+    content: "{{ ansible_svc_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  when: ansible_svc_ssh_key | length > 0
+
+# ---- AI agent --------------------------------------------------------------
+- name: Agent user
+  ansible.builtin.user:
+    name: "{{ agent_user }}"
+    shell: /bin/bash
+    groups: "{{ ['adm', 'systemd-journal'] }}"
+    append: true
+    create_home: true
+  when: agent_ssh_key | length > 0
+
+- name: Agent key
+  ansible.posix.authorized_key:
+    user: "{{ agent_user }}"
+    key: "{{ agent_ssh_key }}"
+    key_options: "{{ ('from=\"' ~ agent_key_from ~ '\"') if agent_key_from | length > 0 else omit }}"
+    exclusive: true
+  when: agent_ssh_key | length > 0
+
+- name: Agent sudo
+  ansible.builtin.template:
+    src: sudoers-agent.j2
+    dest: /etc/sudoers.d/30-agent
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  when: agent_ssh_key | length > 0

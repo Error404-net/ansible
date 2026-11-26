@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: docker_host
+  author: Error404
+  description: Docker Engine + compose plugin, /opt/stacks layout.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions: [bookworm, trixie]
+    - name: Ubuntu
+      versions: [jammy, noble]
+dependencies: []

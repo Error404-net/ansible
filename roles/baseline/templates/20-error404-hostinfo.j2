@@ -1,0 +1,22 @@
+#!/bin/bash
+# {{ ansible_managed }}
+# Palette from branding.error404.net (ANSI-256 approximations)
+C=$'\e[38;5;51m'; P=$'\e[38;5;205m'; Y=$'\e[38;5;221m'; M=$'\e[38;5;85m'; W=$'\e[38;5;255m'; R=$'\e[0m'
+
+UPD=$(apt list --upgradable 2>/dev/null | grep -c upgradable || true)
+UP=$(uptime -p 2>/dev/null | sed 's/^up //')
+IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+
+printf '%s\n' "${M}--------------------------------------------------------------------------------${R}"
+printf "  ${C}HOST........${R}: ${W}%s${R}\n" "{{ inventory_hostname }}"
+printf "  ${C}ZONE........${R}: ${W}%s${R}  ${P}[%s]${R}\n" "{{ dns_zone | default('unknown') }}" "{{ env_tier | default('?') }}"
+printf "  ${C}LOCATION....${R}: ${W}%s${R}\n" "{{ location | default('-') }}"
+printf "  ${C}PURPOSE.....${R}: ${W}%s${R}\n" "{{ purpose | default('-') }}"
+printf "  ${C}ADDRESS.....${R}: ${W}%s${R}\n" "$IP"
+printf "  ${C}UPTIME......${R}: ${W}%s${R}\n" "$UP"
+printf "  ${C}UPDATES.....${R}: ${Y}%s pending${R}\n" "$UPD"
+printf "  ${C}MANAGED.....${R}: ${W}ansible // github.com/Error404-net/ansible${R}\n"
+{% if 'critical' in group_names %}
+printf "  ${P}!! CRITICAL HOST: changes need check+diff and an OK from Jesse !!${R}\n"
+{% endif %}
+printf '%s\n' "${M}--------------------------------------------------------------------------------${R}"

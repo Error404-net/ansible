@@ -1,0 +1,120 @@
+---
+- name: Packages
+  ansible.builtin.apt:
+    name: [git, python3-venv, python3-pip, age, curl, jq, tmux, sshpass, acl]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Shared infra group
+  ansible.builtin.group:
+    name: "{{ ctrl_group }}"
+
+- name: Members of infra group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: ["{{ ctrl_group }}"]
+    append: true
+  loop: "{{ ctrl_members }}"
+
+- name: Python venv with Ansible tooling
+  ansible.builtin.pip:
+    name: "{{ ctrl_pip_packages }}"
+    virtualenv: "{{ ctrl_venv }}"
+    virtualenv_command: python3 -m venv
+
+- name: Put venv tools on PATH for everyone
+  ansible.builtin.copy:
+    dest: /etc/profile.d/infra.sh
+    content: |
+      export PATH="{{ ctrl_venv }}/bin:$PATH"
+      export SOPS_AGE_KEY_FILE="{{ ctrl_age_key }}"
+      export ANSIBLE_CONFIG="{{ ctrl_repo_dir }}/ansible.cfg"
+      alias infra='cd {{ ctrl_repo_dir }}'
+    mode: "0644"
+
+- name: Install sops
+  ansible.builtin.get_url:
+    url: "https://github.com/getsops/sops/releases/download/v{{ ctrl_sops_version }}/sops-v{{ ctrl_sops_version }}.linux.amd64"
+    dest: /usr/local/bin/sops
+    mode: "0755"
+
+- name: Secret dirs (group-readable by infra, nobody else)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ ctrl_group }}"
+    mode: "0750"
+  loop: [/etc/infra, /etc/infra/age, /etc/infra/ssh]
+
+- name: Generate control node age key (only if missing)
+  ansible.builtin.command:
+    cmd: age-keygen -o {{ ctrl_age_key }}
+    creates: "{{ ctrl_age_key }}"
+
+- name: Age key permissions
+  ansible.builtin.file:
+    path: "{{ ctrl_age_key }}"
+    owner: root
+    group: "{{ ctrl_group }}"
+    mode: "0640"
+
+- name: Generate Ansible SSH key (only if missing)
+  community.crypto.openssh_keypair:
+    path: "{{ ctrl_ssh_key }}"
+    type: ed25519
+    comment: "ansible@{{ inventory_hostname }}"
+    owner: root
+    group: "{{ ctrl_group }}"
+    mode: "0640"
+    regenerate: never
+
+- name: Shared repo checkout
+  ansible.builtin.git:
+    repo: "{{ ctrl_repo_url }}"
+    dest: "{{ ctrl_repo_dir }}"
+    version: main
+    update: false
+  register: ctrl_checkout
+
+- name: Repo owned by infra group, setgid so new files stay shared
+  ansible.builtin.file:
+    path: "{{ ctrl_repo_dir }}"
+    state: directory
+    group: "{{ ctrl_group }}"
+    mode: "2775"
+    recurse: false
+
+- name: Default ACL so both users can edit
+  ansible.posix.acl:
+    path: "{{ ctrl_repo_dir }}"
+    entity: "{{ ctrl_group }}"
+    etype: group
+    permissions: rwX
+    default: true
+    recursive: true
+    state: present
+
+- name: Mark repo safe for git across users
+  community.general.git_config:
+    name: safe.directory
+    value: "{{ ctrl_repo_dir }}"
+    scope: system
+
+- name: Tailscale
+  ansible.builtin.import_tasks: tailscale.yml
+  when: ctrl_install_tailscale | bool
+
+- name: Read public keys
+  ansible.builtin.shell:
+    cmd: "set -o pipefail; age-keygen -y {{ ctrl_age_key }}; cat {{ ctrl_ssh_key }}.pub"
+    executable: /bin/bash
+  register: ctrl_pubkeys
+  changed_when: false
+
+- name: Report public keys (put these in .sops.yaml and vars.yml)
+  ansible.builtin.debug:
+    msg:
+      - "age recipient for .sops.yaml : {{ ctrl_pubkeys.stdout_lines[0] }}"
+      - "ansible_svc_ssh_key          : {{ ctrl_pubkeys.stdout_lines[1] }}"

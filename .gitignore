@@ -1,0 +1,25 @@
+# never commit secrets in the clear
+*.decrypted*
+*.dec.yml
+.env
+.env.*
+*.key
+*.pem
+*.age
+keys.txt
+age-key.txt
+.vault_pass*
+secrets.yml
+!*.sops.yml
+
+# local / generated
+collections/
+.ansible/
+*.retry
+__pycache__/
+.venv/
+venv/
+dns-export/
+*.log
+.DS_Store
+.cache/

@@ -1,0 +1,26 @@
+---
+# Installs Tailscale. Joining the tailnet is a manual, one-time step
+# (`tailscale up --advertise-tags=tag:ctrl --ssh=false`) so no auth key lives in Git.
+- name: Tailscale apt key
+  ansible.builtin.get_url:
+    url: "https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg"
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: "0644"
+
+- name: Tailscale apt repo
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian {{ ansible_distribution_release }} main"
+    filename: tailscale
+    state: present
+
+- name: Install tailscale
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+    update_cache: true
+
+- name: Tailscale running
+  ansible.builtin.service:
+    name: tailscaled
+    state: started
+    enabled: true

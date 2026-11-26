@@ -1,0 +1,4 @@
+---
+# Technitium records for cloud.error404.net, managed by playbooks/dns.yml.
+# Seed from: ansible-playbook playbooks/dns.yml -e technitium_mode=export
+dns_records: []

@@ -1,0 +1,11 @@
+---
+# Technitium records as code. Runs on the control node against the API.
+#   export : ansible-playbook playbooks/dns.yml -e technitium_mode=export
+#   plan   : ansible-playbook playbooks/dns.yml                       (default, read-only)
+#   apply  : ansible-playbook playbooks/dns.yml -e technitium_mode=apply -e technitium_confirm_apply=true
+- name: Technitium DNS
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - technitium

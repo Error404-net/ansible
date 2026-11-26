@@ -1,0 +1,19 @@
+---
+# Cross-cutting groups. Hosts are members of a zone group (wb/lab/cloud) AND
+# any of these. Membership drives behavior:
+#   critical    : HA, Technitium, reverse proxy, Proxmox networking.
+#                 check+diff and operator OK before any real run; never scheduled.
+#   appliances  : HAOS and other appliances. Baseline role is NOT applied.
+#   proxmox     : hypervisors.
+#   docker_hosts: get the docker_host role.
+#   ctrl        : the Ansible control node.
+critical:
+  hosts: {}
+appliances:
+  hosts: {}
+proxmox:
+  hosts: {}
+docker_hosts:
+  hosts: {}
+ctrl:
+  hosts: {}

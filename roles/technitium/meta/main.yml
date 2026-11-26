@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: technitium
+  author: Error404
+  description: Technitium DNS records as code via HTTP API. Export, plan, apply (no deletes).
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: GenericLinux
+      versions: [all]
+dependencies: []

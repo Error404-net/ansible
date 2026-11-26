@@ -1,0 +1,7 @@
+---
+- name: Control node
+  hosts: ctrl
+  become: true
+  roles:
+    - baseline
+    - control_node

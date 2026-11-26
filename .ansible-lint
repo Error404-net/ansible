@@ -1,0 +1,9 @@
+---
+profile: production
+exclude_paths:
+  - collections/
+  - .github/
+  - "**/*.sops.yml"
+  - inventory/group_vars/all/secrets.sops.yml.example
+skip_list:
+  - var-naming[no-role-prefix]

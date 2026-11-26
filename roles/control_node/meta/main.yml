@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: control_node
+  author: Error404
+  description: Ansible control node LXC. Shared /opt/infra checkout, venv tooling, sops/age, Tailscale.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions: [bookworm, trixie]
+dependencies: []

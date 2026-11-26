@@ -1,0 +1,33 @@
+---
+# Talks to Technitium's HTTP API from the control node. Verify endpoint/field
+# names against https://github.com/TechnitiumSoftware/DnsServer/blob/master/APIDOCS.md
+# if Technitium is upgraded.
+- name: Require API token
+  ansible.builtin.assert:
+    that: technitium_api_token is defined and technitium_api_token != 'CHANGEME'
+    fail_msg: "technitium_api_token missing. Add it to inventory/group_vars/all/secrets.sops.yml."
+
+- name: Read live records per zone
+  ansible.builtin.uri:
+    url: "{{ technitium_url }}/api/zones/records/get?token={{ technitium_api_token | urlencode }}&domain={{ item }}&zone={{ item }}&listZone=true"
+    validate_certs: "{{ technitium_validate_certs }}"
+    return_content: true
+  loop: "{{ technitium_zones }}"
+  register: technitium_live
+  no_log: true
+  check_mode: false
+
+- name: Normalize live records
+  ansible.builtin.set_fact:
+    technitium_live_records: "{{ technitium_live_records | default({}) | combine({item.item: (item.json.response.records | default([]))}) }}"
+  loop: "{{ technitium_live.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Export
+  ansible.builtin.include_tasks: export.yml
+  when: technitium_mode == 'export'
+
+- name: Plan / apply
+  ansible.builtin.include_tasks: plan_apply.yml
+  when: technitium_mode in ['plan', 'apply']

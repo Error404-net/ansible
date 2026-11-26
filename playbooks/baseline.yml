@@ -1,0 +1,9 @@
+---
+# Safe to schedule nightly for drift, EXCLUDING critical:
+#   ansible-playbook playbooks/baseline.yml -l 'all:!critical'
+- name: Baseline
+  hosts: "all:!appliances"
+  become: true
+  serial: "25%"
+  roles:
+    - baseline

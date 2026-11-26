@@ -1,0 +1,37 @@
+---
+# Global, non-secret. Secrets live in secrets.sops.yml next to this file.
+org_name: Error404
+timezone: America/Chicago
+
+# Operator account
+operator_user: CHANGEME_jesse_username
+operator_ssh_keys: []
+#  - "sk-ssh-ed25519@openssh.com AAAA... jesse@yubikey"
+
+# AI agent account (limited, auditable, revocable in one place)
+agent_user: agent
+agent_ssh_key: ""   # "ssh-ed25519 AAAA... agent@<host>"
+agent_key_from: ""  # e.g. "100.64.0.0/10,10.0.0.5" (tailnet + ctrl node). Empty = no from= restriction.
+
+# Branding: MOTD script comes from the brand repo at a pinned ref.
+branding_repo: https://github.com/Error404-net/Branding-Guide.git
+branding_ref: main   # pin to a commit SHA once stable
+motd_active_logo: logo_compact
+
+# Dotfiles (chezmoi). Empty = skip.
+dotfiles_repo: ""
+
+# Technitium API endpoint (token in secrets.sops.yml as technitium_api_token)
+technitium_url: CHANGEME_https://dns.wb.error404.net:53443
+technitium_zones:
+  - wb.error404.net
+  - lab.error404.net
+  - cloud.error404.net
+
+# How Ansible connects. Bootstrap the first run on a host with `-u root`
+# (the agent already has root); after baseline creates the service account,
+# everything goes through it from the control node.
+ansible_user: ansible
+ansible_ssh_private_key_file: /etc/infra/ssh/id_ed25519
+ansible_svc_ssh_key: ""      # printed by playbooks/control_node.yml
+ansible_svc_key_from: ""     # control node IP + its tailnet IP, comma-separated

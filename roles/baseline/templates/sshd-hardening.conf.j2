@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+# Debian includes sshd_config.d/*.conf at the top of sshd_config; first match wins.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+X11Forwarding no
+MaxAuthTries 4
+AllowUsers {{ ([operator_user] + ([ansible_svc_user] if ansible_svc_ssh_key | length > 0 else []) + ([agent_user] if agent_ssh_key | length > 0 else [])) | join(' ') }}

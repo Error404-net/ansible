@@ -1,0 +1,36 @@
+---
+# Lock-out guard: only harden after key login has been verified on THIS host.
+- name: Skip hardening until key login is verified
+  ansible.builtin.debug:
+    msg: >-
+      sshd NOT hardened on {{ inventory_hostname }}: set baseline_ssh_verified: true
+      in inventory/host_vars/{{ inventory_hostname }}.yml after confirming
+      `ssh {{ operator_user }}@{{ inventory_hostname }}` works with a key.
+  when: not (baseline_ssh_verified | bool)
+
+- name: Harden sshd (drop-in, rolled back if sshd -t fails)
+  when:
+    - baseline_harden_sshd | bool
+    - baseline_ssh_verified | bool
+  block:
+    - name: Write drop-in
+      ansible.builtin.template:
+        src: sshd-hardening.conf.j2
+        dest: /etc/ssh/sshd_config.d/10-error404.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload sshd
+
+    - name: Validate full sshd config
+      ansible.builtin.command: /usr/sbin/sshd -t
+      changed_when: false
+  rescue:
+    - name: Roll back drop-in
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/10-error404.conf
+        state: absent
+
+    - name: Fail loudly
+      ansible.builtin.fail:
+        msg: "sshd -t failed on {{ inventory_hostname }}; drop-in removed, sshd untouched."

@@ -1,0 +1,50 @@
+---
+- name: Load desired records for each zone
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../dns/{{ zone }}.yml"
+    name: "technitium_desired_{{ zone.split('.')[0] }}"
+  loop: "{{ technitium_zones }}"
+  loop_control:
+    loop_var: zone
+  when: (playbook_dir ~ '/../dns/' ~ zone ~ '.yml') is file
+
+- name: Compute changes
+  ansible.builtin.set_fact:
+    technitium_changes: >-
+      {%- set out = [] -%}
+      {%- for zone in technitium_zones -%}
+        {%- set short = zone.split('.')[0] -%}
+        {%- set desired = (lookup('vars', 'technitium_desired_' ~ short, default={})).dns_records | default([]) -%}
+        {%- set live = technitium_live_records[zone] | default([]) -%}
+        {%- for d in desired -%}
+          {%- set match = live | selectattr('name', 'equalto', d.name) | selectattr('type', 'equalto', d.type) | list -%}
+          {%- set vals = match | map(attribute='rData.' ~ ('cname' if d.type == 'CNAME' else 'ipAddress')) | list -%}
+          {%- if d.value not in vals -%}
+            {%- set _ = out.append({'zone': zone, 'name': d.name, 'type': d.type, 'value': d.value,
+                                    'ttl': d.ttl | default(3600), 'was': vals}) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: Plan
+  ansible.builtin.debug:
+    msg: "{{ technitium_changes if technitium_changes | length > 0 else 'ZERO DIFF: inventory matches live Technitium' }}"
+
+- name: Apply changes (adds/overwrites only, never deletes)
+  ansible.builtin.uri:
+    url: "{{ technitium_url }}/api/zones/records/add"
+    method: POST
+    body_format: form-urlencoded
+    body: >-
+      {{ {'token': technitium_api_token, 'zone': item.zone, 'domain': item.name, 'type': item.type,
+          'ttl': item.ttl, 'overwrite': 'true'}
+         | combine({('cname' if item.type == 'CNAME' else 'ipAddress'): item.value}) }}
+    validate_certs: "{{ technitium_validate_certs }}"
+  loop: "{{ technitium_changes }}"
+  loop_control:
+    label: "{{ item.name }} {{ item.type }} {{ item.value }}"
+  when:
+    - technitium_mode == 'apply'
+    - technitium_confirm_apply | bool
+  no_log: true
