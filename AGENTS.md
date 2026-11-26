@@ -49,3 +49,8 @@ finish. If you learned it and didn't write it here, you'll have to learn it agai
 - Files in `inventory/` are parsed as inventory. Non-inventory data (DNS records) lives in `dns/`.
 - Technitium API field names (`rData.ipAddress`, `rData.cname`) were written from the API docs, not tested live. Verify on first export.
 - Debian's stock `sshd_config` includes `sshd_config.d/*.conf` at the top; first value wins, so the drop-in overrides.
+- Offline tests (2026-11-26, mock Technitium on 127.0.0.1, RFC 5737 data): export, plan (ZERO DIFF and drift), and apply with `technitium_confirm_apply=true` work with the field names above. Apply POSTs `/api/zones/records/add` with `overwrite=true`. Still unverified against a real Technitium.
+- Open risk: Technitium `overwrite=true` on a name may replace the whole RRset, not just one value. That would break "never deletes" for multi-IP names. Verify on live Technitium before any apply that touches multi-value names.
+- `baseline` fails under `-i localhost,` on undefined `timezone`, `agent_ssh_key`, `dotfiles_repo` (they come from group_vars). Define defaults in `roles/baseline/defaults/main.yml`.
+- Test lockout guards with a real list: `-e '{"operator_ssh_keys": []}'`. `-e key=[]` passes the string "[]".
+- `gh` was unauthenticated (401) on the test host, so the repo-visibility guardrail is unchecked.
